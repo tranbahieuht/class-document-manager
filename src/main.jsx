@@ -43,8 +43,8 @@ function useLibrary() {
   const [documents, setDocuments] = useState(() => storage.get('documents', seedDocuments))
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [error, setError] = useState('')
-  useEffect(() => storage.set('subjects', subjects), [subjects])
-  useEffect(() => storage.set('documents', documents), [documents])
+  useEffect(() => { if (!supabase) storage.set('subjects', subjects) }, [subjects])
+  useEffect(() => { if (!supabase) storage.set('documents', documents) }, [documents])
   useEffect(() => {
     if (!supabase) return undefined
     let cancelled = false
@@ -100,12 +100,13 @@ function useLibrary() {
       }
       for (const document of next) {
         const payload = { subject_id: document.subject_id, title: document.title, topic: document.topic || '', description: document.description || '', file_url: document.file_url || null, file_path: document.file_path || null, file_name: document.file_name, file_type: document.file_type, file_size: Number(document.file_size) || 0, study_date: document.study_date || null, uploaded_at: document.uploaded_at || new Date().toISOString() }
-        if (isUuid(document.id) && previousIds.has(document.id)) {
+        if (previousIds.has(document.id)) {
           const { error: updateError } = await supabase.from('documents').update(payload).eq('id', document.id)
           if (updateError) throw updateError
-        } else if (!isUuid(document.id)) {
+        } else {
           const { data, error: insertError } = await supabase.from('documents').insert(payload).select().single()
           if (insertError) throw insertError
+          if (!data) throw new Error('Supabase không trả về tài liệu vừa tạo.')
           setDocuments(current => current.map(item => item.id === document.id ? data : item))
         }
       }
