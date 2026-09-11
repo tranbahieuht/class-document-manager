@@ -171,6 +171,11 @@ const documentUrl = (document) => document.file_url || (document.file_path && su
 async function downloadDocument(document) {
   const url = documentUrl(document)
   if (!url) throw new Error('Tài liệu này chưa có file trong Storage.')
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  if (isIOS) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    return
+  }
   const response = await fetch(url)
   if (!response.ok) throw new Error('Không thể tải file tài liệu.')
   const blob = await response.blob()
@@ -189,6 +194,16 @@ function DocumentViewer({ document, onClose }) {
   const isImage = ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(type)
   const isOffice = ['DOC', 'DOCX', 'PPT', 'PPTX'].includes(type)
   const officeUrl = isOffice && url ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}` : ''
+  useEffect(() => {
+    const previousOverflow = window.document.body.style.overflow
+    const closeOnEscape = event => { if (event.key === 'Escape') onClose() }
+    window.document.body.style.overflow = 'hidden'
+    window.document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      window.document.body.style.overflow = previousOverflow
+      window.document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [onClose])
   const download = async () => {
     setError('')
     setDownloading(true)
