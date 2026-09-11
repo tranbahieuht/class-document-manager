@@ -81,6 +81,7 @@ function useLibrary() {
         } else if (!isUuid(subject.id)) {
           const { data, error: insertError } = await supabase.from('subjects').insert(payload).select().single()
           if (insertError) throw insertError
+          if (!data) throw new Error('Supabase không trả về môn học vừa tạo.')
           setSubjects(current => current.map(item => item.id === subject.id ? data : item))
         }
       }
@@ -112,7 +113,13 @@ function useLibrary() {
   }
   return { subjects, setSubjects: saveSubjects, documents, setDocuments: saveDocuments, loading, error }
 }
-const formatDate = (value) => value ? new Intl.DateTimeFormat('vi-VN').format(new Date(value + 'T00:00:00')) : '—'
+const formatDate = (value) => {
+  if (!value) return '—'
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`)
+    : new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat('vi-VN').format(date)
+}
 const subjectName = (subjects, id) => subjects.find((item) => item.id === id)?.name || 'Môn chưa phân loại'
 function fileIcon(type) {
   const props = { size: 21, strokeWidth: 1.8 }
