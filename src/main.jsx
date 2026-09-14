@@ -52,15 +52,20 @@ function useLibrary() {
     if (!supabase) return undefined
     let cancelled = false
     const load = async () => {
-      const [subjectResult, documentResult, timetableResult] = await Promise.all([
+      const [subjectResult, documentResult] = await Promise.all([
         supabase.from('subjects').select('*').order('name'),
-        supabase.from('documents').select('*').order('uploaded_at', { ascending: false }),
-        supabase.from('timetable').select('*').maybeSingle()
+        supabase.from('documents').select('*').order('uploaded_at', { ascending: false })
       ])
       if (cancelled) return
-      if (subjectResult.error || documentResult.error || timetableResult.error) setError(subjectResult.error?.message || documentResult.error?.message || timetableResult.error?.message || 'Không thể tải dữ liệu từ Supabase.')
-      else { setSubjects(subjectResult.data || []); setDocuments(documentResult.data || []); setTimetable(timetableResult.data || null) }
+      if (subjectResult.error || documentResult.error) setError(subjectResult.error?.message || documentResult.error?.message || 'Không thể tải dữ liệu từ Supabase.')
+      else { setSubjects(subjectResult.data || []); setDocuments(documentResult.data || []) }
       setLoading(false)
+      try {
+        const { data, error: timetableError } = await supabase.from('timetable').select('*').maybeSingle()
+        if (!cancelled) setTimetable(timetableError ? null : data || null)
+      } catch {
+        if (!cancelled) setTimetable(null)
+      }
     }
     load()
     return () => { cancelled = true }
