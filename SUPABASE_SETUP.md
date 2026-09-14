@@ -5,6 +5,8 @@ Tạo project tại Supabase Dashboard. Trong SQL Editor chạy theo đúng th�
 
 1. `supabase/migrations/202609110001_initial_schema.sql`
 2. `supabase/migrations/202609110002_storage.sql`
+3. `supabase/migrations/202609140001_timetable.sql`
+4. `supabase/migrations/202609140002_class_content.sql`
 
 Migration đầu tiên chỉ tạo schema, functions, triggers và RLS. Migration thứ hai tạo bucket `documents` và Storage policies. Cả hai migration đều không tạo user, profile hoặc password.
 
@@ -42,7 +44,7 @@ npm run dev
 Super admin đăng nhập tại `/admin/login`, mở `/admin/users` và gửi invitation. Frontend gửi access token hiện tại đến `POST /api/admin/invite`. Server dùng Supabase Admin API với `SUPABASE_SERVICE_ROLE_KEY`, kiểm tra token bằng `auth.getUser()`, đọc profile người gọi và chỉ tiếp tục nếu role là `super_admin` và `is_active = true`. Server luôn tạo Auth user/profile với role `admin`; admin thường nhận `403` và không thể tự gửi role khác.
 
 ## 6. Storage và RLS
-Migration `202609110002_storage.sql` tạo bucket `documents`, policy public read cho file thuộc bucket và policy ghi/xóa chỉ cho admin. Public chỉ đọc subject active và document thuộc subject active.
+Migration `202609110002_storage.sql` tạo bucket `documents`, policy public read cho file thuộc bucket và policy ghi/xóa chỉ cho admin. Migration `202609140002_class_content.sql` tạo các bucket riêng `news`, `teachers` và `class-members`; không dùng chung bucket `documents`. Public chỉ đọc nội dung đã công khai, còn thao tác ghi/xóa chỉ dành cho admin.
 
 ## 7. Kiểm tra bảo mật
 Trong SQL Editor kiểm tra role bằng:
